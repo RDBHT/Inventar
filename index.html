@@ -193,6 +193,7 @@
   <form id="kennwort-form" method="dialog" class="spalte">
     <h2 id="kw-titel">Kennwort ändern</h2>
     <label>Bisheriges Kennwort <input type="password" id="kw-alt" required autocomplete="current-password"></label>
+    <label>Code aus der App <input type="text" id="kw-code" required inputmode="numeric" maxlength="7" autocomplete="one-time-code"></label>
     <label>Neues Kennwort (mind. 12 Zeichen) <input type="password" id="kw-neu" required minlength="12" autocomplete="new-password"></label>
     <p id="kw-fehler" class="fehler" role="alert"></p>
     <div class="knopfreihe"><button type="button" class="btn" id="kw-abbrechen">Abbrechen</button><button type="submit" class="btn primaer">Ändern</button></div>

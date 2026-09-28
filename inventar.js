@@ -258,7 +258,7 @@
     $('#anmelde-name-feld').hidden = modus !== 'einrichten';
     $('#anmelde-einrichtcode-feld').hidden = modus !== 'einrichten';
     if (modus === 'einrichten' && !cfg.pruefung && !text) {
-      $('#anmelde-text').textContent = 'Einrichtung gesperrt: Im Datenordner die Datei einrichtcode.txt mit einem Code von mindestens 20 Zeichen anlegen, dann neu laden.';
+      $('#anmelde-text').textContent = 'Einrichtung gesperrt: Im Datenordner die Datei einrichtcode.txt mit einem Code von mindestens 32 Zeichen anlegen, dann neu laden.';
     }
     zeigePruefung();
     $('#anmelde-wdh-feld').hidden = !neuesKw;
@@ -530,7 +530,7 @@
   $('#kennwort-form').addEventListener('submit', async e => {
     e.preventDefault();
     try {
-      await api('kennwort', { alt: $('#kw-alt').value, neu: $('#kw-neu').value });
+      await api('kennwort', { alt: $('#kw-alt').value, code: $('#kw-code').value, neu: $('#kw-neu').value });
       $('#kennwort-dialog').close();
       melde('Kennwort geändert');
     } catch (err) { $('#kw-fehler').textContent = err.message; }
