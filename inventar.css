@@ -99,6 +99,7 @@ h3 { font-size:15px; margin-bottom:10px; }
 .badge.gelb { background:var(--gelb-bg); color:var(--gelb); }
 .badge.gruen { background:var(--gruen-bg); color:var(--gruen); }
 .leer { text-align:center; color:var(--text2); padding:40px 16px; }
+.fuss { max-width:1100px; margin:0 auto; padding:8px 16px 28px; color:var(--text2); font-size:13px; text-align:center; }
 
 /* Detail */
 dialog { border:0; padding:0; background:var(--card); color:var(--text); border-radius:14px; box-shadow:0 20px 60px rgba(0,0,0,.25); }

@@ -72,6 +72,7 @@
         return {
           eingerichtet: true, angemeldet: true, benutzer: { email: 'demo@beispiel.de', name: 'Demo' },
           basisUrl: basis, traeger: 'WBG Inventar', maxUploadMb: 1, endungen: ['pdf', 'jpg', 'jpeg', 'png', 'webp', 'txt'], lokal: false,
+          version: '0.4.0', fusszeile: 'R.D. – WBG',
         };
       case 'liste':
         return { items: zustand.items.map(aufbereiten) };

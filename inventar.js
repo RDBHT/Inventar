@@ -595,10 +595,17 @@
     else if (!$('#app').hidden && /^#INV-/.test(location.hash)) laden();
   });
 
+  // Fusszeile: Version und Absender.
+  function zeigeFuss() {
+    $('#fuss').textContent = [`Inventar ${cfg.version || ''}`, cfg.fusszeile].filter(Boolean).join(' · ');
+    $('#fuss').hidden = false;
+  }
+
   // ---------- Start ----------
   (async () => {
     try {
       cfg = await api('status');
+      zeigeFuss();
       const m = location.hash.match(/^#einladung=([a-f0-9]{48})$/);
       if (m) {
         history.replaceState(null, '', location.pathname);
