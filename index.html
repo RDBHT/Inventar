@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src 'self'; base-uri 'none'; form-action 'self'">
+<title>Inventar · Demo</title>
+<link rel="stylesheet" href="inventar.css">
+<script src="lib/qrcode.js"></script>
+</head>
+<body>
+
+<!-- Anmeldung / Ersteinrichtung -->
+<section id="anmeldung" class="anmeldung" hidden>
+  <form id="anmelde-form" class="karte anmelde-karte">
+    <h1>Inventar</h1>
+    <p id="anmelde-text" class="leise">Bitte anmelden.</p>
+    <label id="anmelde-email-feld">E-Mail-Adresse <input type="email" id="anmelde-email" autocomplete="username" required></label>
+    <label id="anmelde-einrichtcode-feld" hidden>Einrichtungscode (aus einrichtcode.txt im Datenordner) <input type="password" id="anmelde-einrichtcode" autocomplete="off"></label>
+    <label id="anmelde-name-feld" hidden>Name <input type="text" id="anmelde-name" autocomplete="name" maxlength="100"></label>
+    <label>Kennwort <input type="password" id="anmelde-kennwort" autocomplete="current-password" required></label>
+    <label id="anmelde-wdh-feld" hidden>Kennwort wiederholen <input type="password" id="anmelde-wdh" autocomplete="new-password"></label>
+    <p id="anmelde-fehler" class="fehler" role="alert"></p>
+    <button type="submit" class="btn primaer" id="anmelde-btn">Anmelden</button>
+    <div id="pruef-block" class="pruef-block" hidden>
+      <h3>Voraussetzungen auf diesem Server</h3>
+      <ul id="pruefliste" class="pruefliste"></ul>
+    </div>
+  </form>
+  <form id="code-form" class="karte anmelde-karte" hidden>
+    <h1>Bestätigungscode</h1>
+    <div id="totp-neu" hidden>
+      <p class="leise">Einmalig: Diesen QR-Code mit einer Authenticator-App scannen (Microsoft Authenticator, Google Authenticator, Bitwarden …). Danach den angezeigten Code eingeben.</p>
+      <div id="totp-qr" class="qr totp-qr"></div>
+      <p class="leise klein">Ohne Kamera: Schlüssel von Hand eingeben<br><span class="mono umbruch" id="totp-geheimnis"></span></p>
+    </div>
+    <p id="totp-alt" class="leise">Den 6-stelligen Code aus der Authenticator-App eingeben.</p>
+    <label>Code <input type="text" id="code-eingabe" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9 ]{6,7}" maxlength="7" required></label>
+    <p id="code-fehler" class="fehler" role="alert"></p>
+    <button type="submit" class="btn primaer">Bestätigen</button>
+    <button type="button" class="btn breit" id="code-zurueck">Zurück</button>
+  </form>
+</section>
+
+<!-- Hauptansicht -->
+<div id="app" hidden>
+  <div id="warnung" class="warnung" role="alert" hidden></div>
+  <header class="kopf">
+    <div class="kopf-titel"><span id="traeger">Inventar</span> <span id="zaehlung" class="leise"></span></div>
+    <div class="leise kopf-ich" id="ich"></div>
+    <div class="kopf-aktionen">
+      <button class="btn primaer" id="neu-btn">+ Neues Item</button>
+      <details class="menue">
+        <summary class="btn">⚙</summary>
+        <div class="menue-liste">
+          <button id="etiketten-btn">Etiketten der Liste drucken</button>
+          <button id="csv-btn">Liste als CSV</button>
+          <a href="api.php?a=export" id="json-btn">Export (JSON, für den IT-Hub)</a>
+          <a href="api.php?a=sicherung" id="sicherung-btn">Sicherung herunterladen</a>
+          <button id="benutzer-btn">Zugänge verwalten</button>
+          <button id="kennwort-btn">Kennwort ändern</button>
+          <button id="abmelden-btn">Abmelden</button>
+        </div>
+      </details>
+    </div>
+  </header>
+
+  <div class="filter">
+    <input type="search" id="suche" placeholder="Suchen: Name, ID, Standort, Kategorie …" aria-label="Suchen">
+    <div class="chips" role="group" aria-label="Filter">
+      <button class="chip aktiv" data-filter="alle">Alle</button>
+      <button class="chip" data-filter="faellig">Prüfung fällig</button>
+      <button class="chip" data-filter="ablauf">Ablauf nah</button>
+      <button class="chip" data-filter="ausgesondert">Ausgesondert</button>
+    </div>
+    <select id="kategorie-filter" aria-label="Kategorie"><option value="">Alle Kategorien</option></select>
+  </div>
+
+  <main id="liste" class="liste"></main>
+  <p id="leer" class="leer" hidden>Noch keine Einträge. Mit „+ Neues Item“ anlegen.</p>
+</div>
+
+<!-- Detail / Bearbeiten -->
+<dialog id="detail" class="detail" aria-labelledby="detail-titel">
+  <form id="item-form" method="dialog">
+    <header class="detail-kopf">
+      <div>
+        <div class="leise mono" id="detail-id">neu</div>
+        <h2 id="detail-titel">Neues Item</h2>
+      </div>
+      <button type="button" class="btn" id="schliessen-btn" aria-label="Schließen">✕</button>
+    </header>
+
+    <div class="detail-inhalt">
+      <div class="spalte">
+        <label>Name <span class="pflicht">*</span>
+          <input name="name" required maxlength="200" autocomplete="off"></label>
+        <div class="zwei">
+          <label>Kategorie <input name="kategorie" list="kategorien" maxlength="80" autocomplete="off"></label>
+          <label>Standort <input name="standort" maxlength="200" autocomplete="off"></label>
+        </div>
+        <datalist id="kategorien"></datalist>
+        <div class="zwei">
+          <label>Anschaffung <input type="date" name="anschaffung"></label>
+          <label>Ablaufdatum <input type="date" name="ablauf"></label>
+        </div>
+
+        <fieldset class="block">
+          <label class="haken"><input type="checkbox" name="kontrolle"> Kontrolle notwendig</label>
+          <div id="kontrolle-felder" hidden>
+            <label>Prüfintervall
+              <select name="intervallMonate">
+                <option value="1">monatlich</option>
+                <option value="3">vierteljährlich</option>
+                <option value="6">halbjährlich</option>
+                <option value="12">jährlich</option>
+                <option value="24">alle 2 Jahre</option>
+                <option value="36">alle 3 Jahre</option>
+                <option value="60">alle 5 Jahre</option>
+              </select></label>
+            <p class="leise" id="pruef-stand"></p>
+          </div>
+        </fieldset>
+
+        <details class="block" id="mehr">
+          <summary>Weitere Angaben</summary>
+          <label>Status
+            <select name="status"><option value="aktiv">aktiv</option><option value="ausgesondert">ausgesondert</option></select></label>
+          <label>HW-Nummer aus dem IT-Register (optional) <input name="hwRef" placeholder="HW-001" pattern="HW-\d{3,}" autocomplete="off"></label>
+          <label>Interne Notiz <textarea name="notiz" rows="3" maxlength="4000"></textarea></label>
+        </details>
+
+        <fieldset class="block oeff">
+          <legend>Was jeder beim Scannen sieht</legend>
+          <label>Öffentlicher Name <input name="oeffName" maxlength="200" placeholder="leer = Name" autocomplete="off"></label>
+          <label>Öffentlicher Hinweis <textarea name="oeffHinweis" rows="2" maxlength="1000" placeholder="z. B. Bei Defekt bitte in der Geschäftsstelle melden."></textarea></label>
+          <p class="leise">Standort, Notiz, Prüfungen und interne Dokumente bleiben intern.</p>
+        </fieldset>
+      </div>
+
+      <div class="spalte" id="nach-anlage">
+        <section class="block" id="qr-block">
+          <h3>QR-Code</h3>
+          <div class="qr-zeile">
+            <div id="qr" class="qr"></div>
+            <div>
+              <div class="mono klein umbruch" id="qr-url"></div>
+              <div class="knopfreihe">
+                <button type="button" class="btn" id="etikett-btn">Etikett drucken</button>
+                <a class="btn" id="oeff-link" target="_blank" rel="noopener">Öffentliche Seite</a>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="block">
+          <h3>Dokumente</h3>
+          <ul id="dok-liste" class="dok-liste"></ul>
+          <div class="hochladen">
+            <input type="text" id="dok-bez" placeholder="Bezeichnung, z. B. Bedienungsanleitung" maxlength="200">
+            <input type="file" id="dok-datei" accept=".pdf,.jpg,.jpeg,.png,.webp,.txt">
+            <label class="haken"><input type="checkbox" id="dok-oeff"> öffentlich</label>
+            <button type="button" class="btn" id="dok-hochladen">Hochladen</button>
+          </div>
+        </section>
+
+        <section class="block" id="pruef-block">
+          <h3>Prüfungen</h3>
+          <div class="hochladen">
+            <input type="date" id="pruef-datum">
+            <input type="text" id="pruef-notiz" placeholder="Notiz (optional)" maxlength="500">
+            <button type="button" class="btn" id="pruef-btn">Prüfung eintragen</button>
+          </div>
+          <ul id="pruef-liste" class="pruef-liste"></ul>
+        </section>
+      </div>
+      <p class="leise" id="vor-anlage">QR-Code, Dokumente und Prüfungen gibt es nach dem ersten Speichern.</p>
+    </div>
+
+    <p id="form-fehler" class="fehler" role="alert"></p>
+    <footer class="detail-fuss">
+      <button type="button" class="btn gefahr" id="loeschen-btn">Löschen</button>
+      <span class="fuss-rechts">
+        <button type="button" class="btn" id="abbrechen-btn">Schließen</button>
+        <button type="submit" class="btn primaer" id="speichern-btn">Speichern</button>
+      </span>
+    </footer>
+  </form>
+</dialog>
+
+<dialog id="kennwort-dialog" aria-labelledby="kw-titel">
+  <form id="kennwort-form" method="dialog" class="spalte">
+    <h2 id="kw-titel">Kennwort ändern</h2>
+    <label>Bisheriges Kennwort <input type="password" id="kw-alt" required autocomplete="current-password"></label>
+    <label>Neues Kennwort (mind. 12 Zeichen) <input type="password" id="kw-neu" required minlength="12" autocomplete="new-password"></label>
+    <p id="kw-fehler" class="fehler" role="alert"></p>
+    <div class="knopfreihe"><button type="button" class="btn" id="kw-abbrechen">Abbrechen</button><button type="submit" class="btn primaer">Ändern</button></div>
+  </form>
+</dialog>
+
+<dialog id="benutzer-dialog" aria-labelledby="bn-titel">
+  <div class="spalte bn">
+    <h2 id="bn-titel">Zugänge</h2>
+    <ul id="bn-liste" class="bn-liste"></ul>
+    <div class="block">
+      <p class="leise">Einladen, Zurücksetzen und Entfernen nur mit eigener Bestätigung:</p>
+      <div class="zwei">
+        <label>Eigenes Kennwort <input type="password" id="bn-bkw" autocomplete="current-password"></label>
+        <label>Code aus der App <input type="text" id="bn-bcode" inputmode="numeric" maxlength="7" autocomplete="one-time-code"></label>
+      </div>
+    </div>
+    <form id="einladen-form" class="block">
+      <h3>Jemanden einladen</h3>
+      <label>E-Mail-Adresse <input type="email" id="bn-email" required autocomplete="off"></label>
+      <label>Name <input type="text" id="bn-name" maxlength="100" autocomplete="off"></label>
+      <button type="submit" class="btn primaer">Einladungslink erzeugen</button>
+    </form>
+    <div id="bn-link" class="block" hidden>
+      <p>Diesen Link der Person geben. Sie legt damit ihr eigenes Kennwort fest. Gültig bis <span id="bn-bis"></span>, nur einmal verwendbar.</p>
+      <input type="text" id="bn-link-text" readonly>
+      <div class="knopfreihe abstand-oben"><button type="button" class="btn" id="bn-kopieren">Link kopieren</button></div>
+    </div>
+    <p id="bn-fehler" class="fehler" role="alert"></p>
+    <div class="knopfreihe"><button type="button" class="btn" id="bn-schliessen">Schließen</button></div>
+  </div>
+</dialog>
+
+<div id="druck" class="druck" aria-hidden="true"></div>
+<div id="meldung" class="meldung" role="status" aria-live="polite"></div>
+
+<script src="demo.js"></script>
+<script src="inventar.js"></script>
+</body>
+</html>

@@ -1,0 +1,134 @@
+{
+ "format": "wbg-inventar/1",
+ "hinweis": "Beispieldaten der Demo — frei erfunden.",
+ "items": [
+  {
+   "id": "INV-0001",
+   "code": "52szhzct",
+   "name": "Feuerlöscher 6 kg Schaum",
+   "kategorie": "Brandschutz",
+   "standort": "Flur Erdgeschoss",
+   "anschaffung": "2023-05-10",
+   "ablauf": "",
+   "kontrolle": true,
+   "intervallMonate": 24,
+   "hwRef": "",
+   "notiz": "Wartung durch Fachfirma",
+   "oeffName": "",
+   "oeffHinweis": "Im Brandfall: Sicherung ziehen, aus sicherer Entfernung auf den Brandherd richten.\nBenutzt oder beschädigt? Bitte in der Geschäftsstelle melden.",
+   "status": "aktiv",
+   "erstellt": "2026-09-28 10:00:00",
+   "geaendert": "2026-09-28 10:00:00",
+   "geaendertVon": "Demo",
+   "dokumente": [
+    {
+     "id": 1,
+     "bezeichnung": "Bedienungsanleitung (Beispiel)",
+     "original": "bedienungsanleitung-beispiel.pdf",
+     "mime": "application/pdf",
+     "groesse": 75103,
+     "oeffentlich": true,
+     "hochgeladen": "2026-09-28 10:00:00",
+     "url": "dokumente/bedienungsanleitung-beispiel.pdf"
+    }
+   ],
+   "pruefungen": [
+    {
+     "id": 1,
+     "datum": "2025-05-12",
+     "notiz": "Prüfung durch Fachfirma, ohne Mängel"
+    }
+   ]
+  },
+  {
+   "id": "INV-0002",
+   "code": "88vvjcgc",
+   "name": "Erste-Hilfe-Kasten DIN 13157",
+   "kategorie": "Erste Hilfe",
+   "standort": "Küche 1. OG",
+   "anschaffung": "2024-02-01",
+   "ablauf": "2026-11-30",
+   "kontrolle": true,
+   "intervallMonate": 12,
+   "hwRef": "",
+   "notiz": "Pflaster nachfüllen",
+   "oeffName": "",
+   "oeffHinweis": "Etwas entnommen? Bitte kurz Bescheid geben, damit nachgefüllt wird.",
+   "status": "aktiv",
+   "erstellt": "2026-09-28 10:00:00",
+   "geaendert": "2026-09-28 10:00:00",
+   "geaendertVon": "Demo",
+   "dokumente": [],
+   "pruefungen": [
+    {
+     "id": 2,
+     "datum": "2025-08-20",
+     "notiz": ""
+    }
+   ]
+  },
+  {
+   "id": "INV-0003",
+   "code": "vhbtchrk",
+   "name": "Netzwerkdrucker 2. OG",
+   "kategorie": "Drucker",
+   "standort": "Flur 2. OG",
+   "anschaffung": "2022-09-15",
+   "ablauf": "",
+   "kontrolle": false,
+   "intervallMonate": 0,
+   "hwRef": "",
+   "notiz": "",
+   "oeffName": "Drucker 2. OG",
+   "oeffHinweis": "Papierstau oder Störung? Bitte an die IT melden.",
+   "status": "aktiv",
+   "erstellt": "2026-09-28 10:00:00",
+   "geaendert": "2026-09-28 10:00:00",
+   "geaendertVon": "Demo",
+   "dokumente": [],
+   "pruefungen": []
+  },
+  {
+   "id": "INV-0004",
+   "code": "gmx92g2y",
+   "name": "HDMI-Kabel 2 m",
+   "kategorie": "Kabel",
+   "standort": "Besprechungsraum",
+   "anschaffung": "",
+   "ablauf": "",
+   "kontrolle": false,
+   "intervallMonate": 0,
+   "hwRef": "",
+   "notiz": "",
+   "oeffName": "",
+   "oeffHinweis": "Bitte im Besprechungsraum lassen.",
+   "status": "aktiv",
+   "erstellt": "2026-09-28 10:00:00",
+   "geaendert": "2026-09-28 10:00:00",
+   "geaendertVon": "Demo",
+   "dokumente": [],
+   "pruefungen": []
+  },
+  {
+   "id": "INV-0005",
+   "code": "6urmtabk",
+   "name": "Beamer (alt)",
+   "kategorie": "Präsentation",
+   "standort": "Lager",
+   "anschaffung": "2015-03-01",
+   "ablauf": "",
+   "kontrolle": false,
+   "intervallMonate": 0,
+   "hwRef": "",
+   "notiz": "Lampe defekt",
+   "oeffName": "",
+   "oeffHinweis": "",
+   "status": "ausgesondert",
+   "erstellt": "2026-09-28 10:00:00",
+   "geaendert": "2026-09-28 10:00:00",
+   "geaendertVon": "Demo",
+   "dokumente": [],
+   "pruefungen": []
+  }
+ ]
+}

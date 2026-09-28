@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-/ZCRz1K3fSQoJOqqdMnZOqvanDDQiZqWkl9lmM7Yyik='; style-src 'unsafe-inline'; connect-src 'self'; img-src 'self'; base-uri 'none'">
+<title>WBG Inventar · Demo</title>
+<style>
+:root { --bg:#f6f5f1; --card:#fff; --text:#1f1e1b; --text2:#5f5e59; --line:#e2e0da; --accent:#1f5f8b; }
+@media (prefers-color-scheme: dark) { :root { --bg:#161614; --card:#201f1d; --text:#ecebe6; --text2:#a8a7a0; --line:#34332f; --accent:#7fb3d9; } }
+* { box-sizing: border-box; }
+body { margin:0; background:var(--bg); color:var(--text); font:17px/1.5 -apple-system, "Segoe UI", system-ui, sans-serif; }
+main { max-width:560px; margin:0 auto; padding:28px 16px 40px; }
+.traeger { font-size:13px; letter-spacing:.06em; text-transform:uppercase; color:var(--text2); }
+.karte { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:20px; margin-top:12px; }
+h1 { font-size:24px; line-height:1.25; margin:4px 0 6px; }
+.id { font:14px ui-monospace, Menlo, monospace; color:var(--text2); }
+.hinweis { margin:14px 0 0; white-space:pre-line; }
+.aus { display:inline-block; margin-top:10px; padding:2px 8px; border-radius:6px; background:#f3e3d6; color:#7a3b12; font-size:14px; }
+h2 { font-size:15px; margin:22px 0 8px; color:var(--text2); font-weight:600; }
+a.dok { display:flex; justify-content:space-between; gap:12px; align-items:center; padding:14px 16px; border:1px solid var(--line); border-radius:10px; text-decoration:none; color:var(--accent); margin-bottom:8px; font-weight:600; }
+a.dok span { color:var(--text2); font-weight:400; font-size:14px; white-space:nowrap; }
+.leer { color:var(--text2); font-size:15px; }
+footer { margin-top:20px; color:var(--text2); font-size:14px; }
+.demo { margin-top:10px; font-size:13px; color:var(--text2); }
+</style>
+</head>
+<body>
+<main>
+  <div class="traeger">WBG Inventar · Demo</div>
+  <div class="karte" id="karte"><p class="leer">Lade …</p></div>
+  <footer>Fragen oder Defekt? Bitte an die Geschäftsstelle der WBG wenden.</footer>
+  <p class="demo">Demo mit Beispieldaten — die echte Version läuft mit Anmeldung auf einem eigenen Server.</p>
+</main>
+<script>
+(async function () {
+  const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const groesse = b => b > 1048576 ? (b / 1048576).toFixed(1).replace('.', ',') + ' MB' : Math.max(1, Math.round(b / 1024)) + ' KB';
+  const art = m => m === 'application/pdf' ? 'PDF' : m === 'text/plain' ? 'Text' : 'Bild';
+  const karte = document.getElementById('karte');
+  const pfad = location.pathname;
+  const i = pfad.indexOf('/i/');
+  const basis = i >= 0 ? pfad.slice(0, i) : pfad.replace(/\/[^/]*$/, '');
+  const m = i >= 0 ? pfad.slice(i + 3).match(/^(INV-\d{4,})-([a-z0-9]{8})$/) : null;
+  let items = [];
+  try { items = (await (await fetch(basis + '/daten.json', { cache: 'no-cache' })).json()).items; } catch (e) { items = []; }
+  // Im selben Browser angelegte Demo-Eintraege ebenfalls zeigen.
+  try { const z = JSON.parse(localStorage.getItem('inventar-demo-v1') || 'null'); if (z) items = z.items; } catch (e) { /* nichts */ }
+  const it = m ? items.find(x => x.id === m[1] && x.code === m[2]) : null;
+  if (!it) { karte.innerHTML = '<h1>Nicht gefunden</h1><p class="leer">Zu diesem Code gibt es keinen Eintrag.</p>'; return; }
+  document.title = (it.oeffName || it.name) + ' · WBG Inventar';
+  const doks = (it.dokumente || []).filter(d => d.oeffentlich && d.url);
+  karte.innerHTML = `<h1>${esc(it.oeffName || it.name)}</h1><div class="id">${esc(it.id)}</div>`
+    + (it.status === 'ausgesondert' ? '<div class="aus">Nicht mehr in Benutzung</div>' : '')
+    + (String(it.oeffHinweis || '').trim() ? `<p class="hinweis">${esc(it.oeffHinweis)}</p>` : '')
+    + (doks.length ? '<h2>Dokumente</h2>' + doks.map(d => `<a class="dok" href="${esc(basis + '/' + d.url)}" target="_blank" rel="noopener">${esc(d.bezeichnung)} <span>${art(d.mime)} · ${groesse(d.groesse)}</span></a>`).join('') : '');
+})();
+</script>
+</body>
+</html>
