@@ -98,9 +98,10 @@
           <input name="name" required maxlength="200" autocomplete="off"></label>
         <div class="zwei">
           <label>Kategorie <input name="kategorie" list="kategorien" maxlength="80" autocomplete="off"></label>
-          <label>Standort <input name="standort" maxlength="200" autocomplete="off"></label>
+          <label>Standort <input name="standort" list="standorte" maxlength="200" autocomplete="off"></label>
         </div>
         <datalist id="kategorien"></datalist>
+        <datalist id="standorte"></datalist>
         <div class="zwei">
           <label>Anschaffung <input type="date" name="anschaffung"></label>
           <label>Ablaufdatum <input type="date" name="ablauf"></label>
@@ -165,10 +166,10 @@
           </div>
         </section>
 
-        <section class="block" id="pruef-block">
+        <section class="block" id="pruefungen-block">
           <h3>Prüfungen</h3>
           <div class="hochladen">
-            <input type="date" id="pruef-datum">
+            <input type="date" id="pruef-datum" aria-label="Prüfdatum (laut Plakette oder Protokoll)">
             <input type="text" id="pruef-notiz" placeholder="Notiz (optional)" maxlength="500">
             <button type="button" class="btn" id="pruef-btn">Prüfung eintragen</button>
           </div>
@@ -180,7 +181,10 @@
 
     <p id="form-fehler" class="fehler" role="alert"></p>
     <footer class="detail-fuss">
-      <button type="button" class="btn gefahr" id="loeschen-btn">Löschen</button>
+      <span class="fuss-links">
+        <button type="button" class="btn gefahr" id="loeschen-btn">Löschen</button>
+        <button type="button" class="btn" id="kopie-btn">Weiteres wie dieses</button>
+      </span>
       <span class="fuss-rechts">
         <button type="button" class="btn" id="abbrechen-btn">Schließen</button>
         <button type="submit" class="btn primaer" id="speichern-btn">Speichern</button>

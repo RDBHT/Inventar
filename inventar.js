@@ -104,6 +104,9 @@
     sel.value = kats.includes(alt) ? alt : '';
     const vorschlag = [...new Set([...kats, 'Arbeitsplatz', 'Notebook', 'Mobilgerät', 'Drucker', 'Netzwerk', 'Kabel', 'Brandschutz', 'Erste Hilfe', 'Möbel', 'Werkzeug'])];
     $('#kategorien').innerHTML = vorschlag.map(k => `<option value="${esc(k)}">`).join('');
+    // Standorte: nur die schon erfassten vorschlagen, damit keine Schreibvarianten entstehen.
+    const orte = [...new Set(items.map(i => i.standort).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'de'));
+    $('#standorte').innerHTML = orte.map(o => `<option value="${esc(o)}">`).join('');
   }
 
   async function laden() {
@@ -128,6 +131,13 @@
 
   function etiketten(liste) {
     if (!liste.length) { melde('Keine Einträge zum Drucken'); return; }
+    // Der QR-Code enthaelt die feste Adresse. Laeuft diese Seite woanders (lokal, Test), fuehrt das Etikett ins Leere.
+    const ziel = new URL(cfg.basisUrl);
+    if (ziel.host !== location.host) {
+      const text = `Etiketten gesperrt: Die QR-Codes zeigen auf ${ziel.host}, diese Seite läuft unter ${location.host}. Nur auf dem Server drucken.`;
+      if ($('#detail').open) $('#form-fehler').textContent = text; else alert(text);
+      return;
+    }
     $('#druck').innerHTML = liste.map(it => `<div class="etikett"><div class="eqr">${qrSvg(oeffUrl(it))}</div>
       <div><div class="etr">${esc(cfg.traeger)}</div><div class="eid">${esc(it.id)}</div><div class="ename">${esc(it.oeffName || it.name)}</div></div></div>`).join('');
     window.print();
@@ -144,9 +154,9 @@
     return d;
   }
 
+  // Setzt nur die Felder des Eintrags — kein form.reset(), das wuerde auch gewaehlte Datei und Pruefung loeschen.
   function fuelleForm(it) {
     const f = form();
-    f.reset();
     const w = it || { status: 'aktiv', intervallMonate: 12 };
     for (const k of ['name', 'kategorie', 'standort', 'anschaffung', 'ablauf', 'hwRef', 'notiz', 'oeffName', 'oeffHinweis', 'status']) f[k].value = w[k] || (k === 'status' ? 'aktiv' : '');
     f.kontrolle.checked = !!w.kontrolle;
@@ -155,13 +165,15 @@
     $('#mehr').open = !!(w.hwRef || w.notiz || w.status === 'ausgesondert');
   }
 
-  function renderDetail() {
+  // behalte: Eingaben fuer Datei und Pruefung stehen lassen (nach Speichern des Eintrags selbst).
+  function renderDetail(behalte = false) {
     const it = aktuell;
     $('#detail-id').textContent = it ? it.id : 'neu';
     $('#detail-titel').textContent = it ? it.name : 'Neues Item';
     $('#nach-anlage').hidden = !it;
     $('#vor-anlage').hidden = !!it;
     $('#loeschen-btn').hidden = !it;
+    $('#kopie-btn').hidden = !it;
     $('#form-fehler').textContent = '';
     if (!it) { $('#pruef-stand').textContent = ''; return; }
 
@@ -173,9 +185,9 @@
     $('#pruef-stand').textContent = it.letztePruefung
       ? `Zuletzt geprüft ${deDatum(it.letztePruefung)} · nächste Prüfung ${deDatum(it.naechstePruefung)}`
       : (it.naechstePruefung ? `Noch keine Prüfung eingetragen · fällig ${deDatum(it.naechstePruefung)} (ab Anschaffung)` : 'Noch keine Prüfung eingetragen.');
-    $('#pruef-block').hidden = !it.kontrolle && !it.pruefungen.length;
-    $('#pruef-datum').value = heute();
-    $('#pruef-notiz').value = '';
+    $('#pruefungen-block').hidden = !it.kontrolle && !it.pruefungen.length;
+    // Nicht vorbelegen: Bei der Ersterfassung zaehlt das Datum auf der Plakette, nicht heute.
+    if (!behalte) { $('#pruef-datum').value = ''; $('#pruef-notiz').value = ''; }
     $('#pruef-liste').innerHTML = it.pruefungen.map(p =>
       `<li><span>${deDatum(p.datum)}${p.notiz ? ' · ' + esc(p.notiz) : ''}</span><button type="button" class="linkknopf" data-pruef-weg="${p.id}">entfernen</button></li>`).join('');
 
@@ -186,9 +198,11 @@
           <span>${esc(d.original)} · ${groesse(d.groesse)}</span>
           <button type="button" class="linkknopf" data-dok-weg="${d.id}">löschen</button></div></li>`).join('')
       || '<li class="leise ohne-rahmen">Noch keine Dokumente.</li>';
-    $('#dok-bez').value = '';
-    $('#dok-datei').value = '';
-    $('#dok-oeff').checked = false;
+    if (!behalte) {
+      $('#dok-bez').value = '';
+      $('#dok-datei').value = '';
+      $('#dok-oeff').checked = false;
+    }
   }
 
   function oeffne(it) {
@@ -200,35 +214,51 @@
     if (!it) form().name.focus();
   }
 
+  // Datei und Pruefung werden ueber eigene Knoepfe uebernommen — was dort steht, geht beim Speichern oder Schliessen sonst still verloren.
+  function offeneEingaben() {
+    const offen = [];
+    if ($('#dok-datei').files.length) offen.push('gewählte Datei (noch nicht hochgeladen)');
+    if ($('#pruef-datum').value || $('#pruef-notiz').value.trim()) offen.push('Prüfung (noch nicht eingetragen)');
+    return offen;
+  }
+
   function schliessen() {
-    if (JSON.stringify(formDaten()) !== formStand && !confirm('Änderungen verwerfen?')) return;
+    const offen = offeneEingaben();
+    if (JSON.stringify(formDaten()) !== formStand) offen.unshift('Änderungen am Eintrag');
+    if (offen.length && !confirm('Nicht übernommen:\n– ' + offen.join('\n– ') + '\n\nTrotzdem schließen?')) return;
     $('#detail').close();
   }
 
-  function uebernehmen(it) {
+  function uebernehmen(it, behalte = false) {
     const i = items.findIndex(x => x.id === it.id);
     if (i >= 0) items[i] = it; else items.push(it);
     aktuell = it;
     renderListe();
-    renderDetail();
+    renderDetail(behalte);
   }
 
   async function speichern(e) {
     e.preventDefault();
-    const f = form();
-    if (!f.reportValidity()) return;
+    const f = form(), knopf = $('#speichern-btn');
+    if (knopf.disabled || !f.reportValidity()) return;
     const neu = !aktuell;
+    // Waehrend der Anfrage gesperrt: ein Doppeltipp legte sonst zwei Eintraege an.
+    knopf.disabled = true;
     try {
       $('#form-fehler').textContent = '';
       const { item } = await api('speichern', formDaten());
       fuelleForm(item);
-      uebernehmen(item);
+      uebernehmen(item, true);
       formStand = JSON.stringify(formDaten());
       if (neu) {
         // Neu angelegt: offen lassen und zum QR-Code springen — Etikett, Dokumente und Pruefungen gehen jetzt.
         document.activeElement && document.activeElement.blur();
         $('#qr-block').scrollIntoView({ block: 'start' });
         melde(`${item.id} angelegt`);
+      } else if (offeneEingaben().length) {
+        // Gespeichert, aber Datei oder Pruefung stehen noch aus — offen lassen statt still zu verwerfen.
+        $('#form-fehler').textContent = 'Gespeichert. Noch nicht übernommen: ' + offeneEingaben().join(', ') + ' — „Hochladen“ bzw. „Prüfung eintragen“ tippen.';
+        melde(`${item.id} gespeichert`);
       } else {
         $('#detail').close();
         melde(`${item.id} gespeichert`);
@@ -236,7 +266,27 @@
     } catch (err) {
       $('#form-fehler').textContent = err.message;
       $('#form-fehler').scrollIntoView({ block: 'nearest' });
+    } finally {
+      knopf.disabled = false;
     }
+  }
+
+  // Serienerfassung: neues Formular mit den Angaben des offenen Eintrags — ohne Notiz, HW-Nummer, Dokumente, Pruefungen.
+  function weiteresWieDieses() {
+    if (!aktuell) return;
+    const offen = offeneEingaben();
+    if (JSON.stringify(formDaten()) !== formStand) offen.unshift('Änderungen am Eintrag');
+    if (offen.length && !confirm('Nicht übernommen:\n– ' + offen.join('\n– ') + '\n\nTrotzdem weiter?')) return;
+    const v = { ...formDaten(), notiz: '', hwRef: '', status: 'aktiv' };
+    delete v.id;
+    aktuell = null;
+    fuelleForm(v);
+    renderDetail();
+    formStand = JSON.stringify(formDaten());
+    $('.detail-inhalt').scrollTop = 0;
+    form().name.focus();
+    form().name.select();
+    melde('Vorlage übernommen — Name anpassen, speichern');
   }
 
   // ---------- Anmeldung ----------
@@ -433,6 +483,7 @@
   form().addEventListener('submit', speichern);
   form().kontrolle.addEventListener('change', e => { $('#kontrolle-felder').hidden = !e.target.checked; });
   $('#schliessen-btn').addEventListener('click', schliessen);
+  $('#kopie-btn').addEventListener('click', weiteresWieDieses);
   $('#abbrechen-btn').addEventListener('click', schliessen);
   $('#detail').addEventListener('cancel', e => { e.preventDefault(); schliessen(); });
 
@@ -473,7 +524,7 @@
     const bez = $('.dok-bez', li).value.trim();
     if (!bez) { $('#form-fehler').textContent = 'Bezeichnung darf nicht leer sein.'; return; }
     try {
-      uebernehmen((await api('dokument', { id: Number(li.dataset.dok), itemId: aktuell.id, bezeichnung: bez, oeffentlich: $('.dok-oeff', li).checked })).item);
+      uebernehmen((await api('dokument', { id: Number(li.dataset.dok), itemId: aktuell.id, bezeichnung: bez, oeffentlich: $('.dok-oeff', li).checked })).item, true);
       melde('Dokument aktualisiert');
     } catch (err) { $('#form-fehler').textContent = err.message; }
   });
@@ -481,13 +532,15 @@
   $('#dok-liste').addEventListener('click', async e => {
     const id = e.target.dataset.dokWeg;
     if (!id || !confirm('Dokument löschen?')) return;
-    try { uebernehmen((await api('dokument_loeschen', { id: Number(id) })).item); melde('Dokument gelöscht'); }
+    try { uebernehmen((await api('dokument_loeschen', { id: Number(id) })).item, true); melde('Dokument gelöscht'); }
     catch (err) { $('#form-fehler').textContent = err.message; }
   });
 
   $('#pruef-btn').addEventListener('click', async () => {
     try {
+      if (!$('#pruef-datum').value) { $('#form-fehler').textContent = 'Prüfdatum eintragen (laut Plakette oder Protokoll).'; $('#pruef-datum').focus(); return; }
       uebernehmen((await api('pruefung', { itemId: aktuell.id, datum: $('#pruef-datum').value, notiz: $('#pruef-notiz').value })).item);
+      $('#form-fehler').textContent = '';
       melde('Prüfung eingetragen');
     } catch (err) { $('#form-fehler').textContent = err.message; }
   });
@@ -495,7 +548,7 @@
   $('#pruef-liste').addEventListener('click', async e => {
     const id = e.target.dataset.pruefWeg;
     if (!id || !confirm('Prüfung entfernen?')) return;
-    try { uebernehmen((await api('pruefung_loeschen', { id: Number(id), itemId: aktuell.id })).item); }
+    try { uebernehmen((await api('pruefung_loeschen', { id: Number(id), itemId: aktuell.id })).item, true); }
     catch (err) { $('#form-fehler').textContent = err.message; }
   });
 

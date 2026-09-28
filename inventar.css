@@ -110,7 +110,7 @@ dialog::backdrop { background:rgba(0,0,0,.35); }
 .detail-inhalt { overflow:auto; padding:16px 20px; display:grid; grid-template-columns:1fr 1fr; gap:24px; }
 .detail-inhalt > .leise { grid-column:1 / -1; margin:0; }
 .detail-fuss { display:flex; justify-content:space-between; gap:8px; padding:12px 20px; border-top:1px solid var(--line); }
-.fuss-rechts, .knopfreihe { display:flex; gap:8px; flex-wrap:wrap; }
+.fuss-rechts, .fuss-links, .knopfreihe { display:flex; gap:8px; flex-wrap:wrap; }
 #form-fehler { padding:0 20px; }
 .spalte { display:flex; flex-direction:column; min-width:0; }
 .zwei { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
@@ -159,7 +159,8 @@ dialog .meldung { top:14px; bottom:auto; }
   .detail-fuss { flex-direction:column-reverse; gap:8px; }
   .fuss-rechts { display:flex; gap:8px; }
   .fuss-rechts .btn { flex:1; }
-  #loeschen-btn { width:100%; }
+  .fuss-links { display:flex; gap:8px; }
+  .fuss-links .btn { flex:1; }
   .detail-inhalt { grid-template-columns:1fr; }
   .zwei, .hochladen { grid-template-columns:1fr; }
   .zeile { grid-template-columns:1fr auto; }

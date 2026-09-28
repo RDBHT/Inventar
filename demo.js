@@ -134,7 +134,8 @@
       }
       case 'pruefung': {
         const it = finde(d.itemId);
-        const datum = datumOk(d.datum) || heute();
+        const datum = datumOk(d.datum);
+        if (!datum) fehler('Prüfdatum fehlt');
         if (datum > heute()) fehler('Prüfdatum liegt in der Zukunft');
         it.pruefungen.push({ id: Date.now(), datum, notiz: String(d.notiz || '').slice(0, 500) });
         speichern();
