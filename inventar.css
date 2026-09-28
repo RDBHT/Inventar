@@ -148,11 +148,18 @@ dialog::backdrop { background:rgba(0,0,0,.35); }
 #kennwort-dialog form { padding:20px; }
 #kennwort-dialog h2 { font-size:19px; margin-bottom:14px; }
 
-.meldung { position:fixed; left:50%; bottom:20px; transform:translateX(-50%); background:var(--text); color:var(--bg);
+.meldung { z-index:20; position:fixed; left:50%; bottom:20px; transform:translateX(-50%); background:var(--text); color:var(--bg);
   padding:10px 16px; border-radius:8px; opacity:0; transition:opacity .2s; pointer-events:none; font-size:15px; }
 .meldung.an { opacity:1; }
 
+dialog .meldung { top:14px; bottom:auto; }
 @media (max-width: 760px) {
+  .qr-zeile { flex-wrap:wrap; }
+  .qr-zeile .knopfreihe .btn { flex:1; }
+  .detail-fuss { flex-direction:column-reverse; gap:8px; }
+  .fuss-rechts { display:flex; gap:8px; }
+  .fuss-rechts .btn { flex:1; }
+  #loeschen-btn { width:100%; }
   .detail-inhalt { grid-template-columns:1fr; }
   .zwei, .hochladen { grid-template-columns:1fr; }
   .zeile { grid-template-columns:1fr auto; }

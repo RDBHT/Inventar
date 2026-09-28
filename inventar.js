@@ -20,6 +20,9 @@
 
   function melde(text) {
     const m = $('#meldung');
+    // Ein offenes Fenster liegt ueber allem — der Hinweis muss in das Fenster, sonst ist er unsichtbar.
+    const host = document.querySelector('dialog[open]') || document.body;
+    if (m.parentNode !== host) host.appendChild(m);
     m.textContent = text;
     m.classList.add('an');
     clearTimeout(melde.t);
@@ -216,12 +219,24 @@
     if (!f.reportValidity()) return;
     const neu = !aktuell;
     try {
+      $('#form-fehler').textContent = '';
       const { item } = await api('speichern', formDaten());
       fuelleForm(item);
       uebernehmen(item);
       formStand = JSON.stringify(formDaten());
-      melde(neu ? `${item.id} angelegt — QR-Code steht bereit` : 'Gespeichert');
-    } catch (err) { $('#form-fehler').textContent = err.message; }
+      if (neu) {
+        // Neu angelegt: offen lassen und zum QR-Code springen — Etikett, Dokumente und Pruefungen gehen jetzt.
+        document.activeElement && document.activeElement.blur();
+        $('#qr-block').scrollIntoView({ block: 'start' });
+        melde(`${item.id} angelegt`);
+      } else {
+        $('#detail').close();
+        melde(`${item.id} gespeichert`);
+      }
+    } catch (err) {
+      $('#form-fehler').textContent = err.message;
+      $('#form-fehler').scrollIntoView({ block: 'nearest' });
+    }
   }
 
   // ---------- Anmeldung ----------
