@@ -48,7 +48,7 @@
   <div id="warnung" class="warnung" role="alert" hidden></div>
   <header class="kopf">
     <div class="kopf-titel"><span id="traeger">Inventar</span> <span id="zaehlung" class="leise"></span></div>
-    <div class="leise kopf-ich" id="ich"></div>
+    <button type="button" class="kopf-ich" id="ich" hidden></button>
     <div class="kopf-aktionen">
       <button class="btn primaer" id="neu-btn">+ Neues Item</button>
       <details class="menue">
@@ -191,6 +191,23 @@
       </span>
     </footer>
   </form>
+</dialog>
+
+<dialog id="profil-dialog" aria-labelledby="pf-titel">
+  <div class="spalte bn">
+    <h2 id="pf-titel">Profil</h2>
+    <dl class="profil">
+      <dt>Name</dt><dd id="pf-name"></dd>
+      <dt>E-Mail</dt><dd id="pf-email"></dd>
+      <dt>Zwei-Faktor</dt><dd>eingerichtet</dd>
+      <dt>Angemeldet bis</dt><dd id="pf-bis"></dd>
+    </dl>
+    <div class="knopfreihe">
+      <button type="button" class="btn" id="pf-kennwort">Kennwort ändern</button>
+      <button type="button" class="btn" id="pf-abmelden">Abmelden</button>
+      <button type="button" class="btn primaer" id="pf-schliessen">Schließen</button>
+    </div>
+  </div>
 </dialog>
 
 <dialog id="kennwort-dialog" aria-labelledby="kw-titel">

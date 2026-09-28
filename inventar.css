@@ -145,7 +145,12 @@ dialog::backdrop { background:rgba(0,0,0,.35); }
 .bn-liste { list-style:none; margin:0 0 14px; padding:0; }
 .bn-liste li { display:flex; justify-content:space-between; align-items:center; gap:8px; padding:10px 0; border-bottom:1px solid var(--line); }
 .bn-liste .leise { display:block; }
-.kopf-ich { margin-left:auto; }
+.kopf-ich { margin-left:auto; min-height:36px; padding:0 14px; border:1px solid var(--line); border-radius:999px; background:var(--card); color:var(--text); font-weight:600; cursor:pointer; }
+.kopf-ich:hover { border-color:var(--text2); }
+#profil-dialog { width:min(420px, calc(100vw - 24px)); }
+.profil { display:grid; grid-template-columns:auto 1fr; gap:6px 14px; margin:0 0 16px; font-size:15px; }
+.profil dt { color:var(--text2); }
+.profil dd { margin:0; overflow-wrap:anywhere; }
 #kennwort-dialog form { padding:20px; }
 #kennwort-dialog h2 { font-size:19px; margin-bottom:14px; }
 
@@ -168,7 +173,8 @@ dialog .meldung { top:14px; bottom:auto; }
   .zeile .zid { grid-column:1; }
   .zeile .zname, .zeile .zmeta { grid-column:1; }
   .zeile .zbadges { grid-row:1 / span 3; grid-column:2; }
-  .kopf-titel #zaehlung, .kopf-ich { display:none; }
+  .kopf-titel #zaehlung { display:none; }
+  .kopf-ich { padding:0 10px; }
 }
 
 /* Etiketten: 62 x 29 mm (Endlos-Etikettenband, passt aber auch auf A4) */

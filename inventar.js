@@ -341,7 +341,9 @@
     $('#anmeldung').hidden = true;
     $('#app').hidden = false;
     $('#traeger').textContent = cfg.traeger;
-    $('#ich').textContent = cfg.benutzer ? (cfg.benutzer.name || cfg.benutzer.email) : '';
+    const ich = $('#ich');
+    ich.textContent = cfg.benutzer ? (cfg.benutzer.name || cfg.benutzer.email) : '';
+    ich.hidden = !cfg.benutzer;
     document.title = cfg.traeger;
     await laden();
   }
@@ -576,7 +578,20 @@
     setTimeout(() => URL.revokeObjectURL(a.href), 1000);
   });
 
-  $('#abmelden-btn').addEventListener('click', async () => { await api('abmelden', {}); location.reload(); });
+  async function abmelden() { await api('abmelden', {}); location.reload(); }
+  $('#abmelden-btn').addEventListener('click', abmelden);
+
+  // Profil: Klick auf den eigenen Namen oben.
+  $('#ich').addEventListener('click', () => {
+    const b = cfg.benutzer || {};
+    $('#pf-name').textContent = b.name || '—';
+    $('#pf-email').textContent = b.email || '—';
+    $('#pf-bis').textContent = b.sitzungBis ? deDatum(b.sitzungBis) : '—';
+    $('#profil-dialog').showModal();
+  });
+  $('#pf-schliessen').addEventListener('click', () => $('#profil-dialog').close());
+  $('#pf-abmelden').addEventListener('click', abmelden);
+  $('#pf-kennwort').addEventListener('click', () => { $('#profil-dialog').close(); $('#kennwort-btn').click(); });
 
   $('#kennwort-btn').addEventListener('click', () => { $('.menue').open = false; $('#kw-fehler').textContent = ''; $('#kennwort-form').reset(); $('#kennwort-dialog').showModal(); });
   $('#kw-abbrechen').addEventListener('click', () => $('#kennwort-dialog').close());

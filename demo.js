@@ -70,9 +70,10 @@
     switch (aktion) {
       case 'status':
         return {
-          eingerichtet: true, angemeldet: true, benutzer: { email: 'demo@beispiel.de', name: 'Demo' },
+          eingerichtet: true, angemeldet: true,
+          benutzer: { name: 'Patrick', email: 'patrick@beispiel.de', sitzungBis: new Date(Date.now() + 30 * 864e5).toISOString().slice(0, 10) },
           basisUrl: basis, traeger: 'WBG Inventar', maxUploadMb: 1, endungen: ['pdf', 'jpg', 'jpeg', 'png', 'webp', 'txt'], lokal: false,
-          version: '0.4.0', fusszeile: 'R.D. – WBG',
+          version: '0.5.0', fusszeile: 'Demo · R.D. – WBG',
         };
       case 'liste':
         return { items: zustand.items.map(aufbereiten) };
@@ -171,6 +172,7 @@
 
   document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('abmelden-btn').textContent = 'Demo zurücksetzen';
+    document.getElementById('pf-abmelden').textContent = 'Demo zurücksetzen';
     document.getElementById('sicherung-btn').hidden = true;
     document.getElementById('json-btn').addEventListener('click', async e => {
       e.preventDefault();
