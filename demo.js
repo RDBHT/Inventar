@@ -63,7 +63,7 @@
 
   const antwortItem = it => ({ item: aufbereiten(it) });
   const alsDataUrl = f => new Promise((ok, nein) => { const r = new FileReader(); r.onload = () => ok(r.result); r.onerror = nein; r.readAsDataURL(f); });
-  const nichtInDerDemo = () => fehler('In der Demo nicht verfügbar — in der echten Version mit Anmeldung und Zwei-Faktor-Code.');
+  const nichtInDerDemo = () => fehler('In der Demo nicht verfügbar.');
 
   async function api(aktion, d = {}, fd) {
     await laden();
@@ -71,7 +71,7 @@
       case 'status':
         return {
           eingerichtet: true, angemeldet: true, benutzer: { email: 'demo@beispiel.de', name: 'Demo' },
-          basisUrl: basis, traeger: 'WBG Inventar · Demo', maxUploadMb: 1, endungen: ['pdf', 'jpg', 'jpeg', 'png', 'webp', 'txt'], lokal: false,
+          basisUrl: basis, traeger: 'WBG Inventar', maxUploadMb: 1, endungen: ['pdf', 'jpg', 'jpeg', 'png', 'webp', 'txt'], lokal: false,
         };
       case 'liste':
         return { items: zustand.items.map(aufbereiten) };
@@ -168,9 +168,6 @@
   window.InventarDemo = { api, dateiUrl };
 
   document.addEventListener('DOMContentLoaded', () => {
-    const w = document.getElementById('warnung');
-    w.textContent = 'Demo ohne Anmeldung: Änderungen bleiben nur in diesem Browser. QR-Codes der Beispiel-Einträge funktionieren auf jedem Handy.';
-    w.hidden = false;
     document.getElementById('abmelden-btn').textContent = 'Demo zurücksetzen';
     document.getElementById('sicherung-btn').hidden = true;
     document.getElementById('json-btn').addEventListener('click', async e => {
