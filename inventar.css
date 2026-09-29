@@ -145,6 +145,9 @@ dialog::backdrop { background:rgba(0,0,0,.35); }
 .bn-liste { list-style:none; margin:0 0 14px; padding:0; }
 .bn-liste li { display:flex; justify-content:space-between; align-items:center; gap:8px; padding:10px 0; border-bottom:1px solid var(--line); }
 .bn-liste .leise { display:block; }
+.bn-liste select { width:auto; min-height:34px; padding:4px 8px; font-size:14px; }
+.bn-aktionen { display:flex; gap:4px; align-items:center; flex-wrap:wrap; justify-content:flex-end; }
+#herkunft { margin:0 0 12px; }
 .kopf-ich { margin-left:auto; min-height:36px; padding:0 14px; border:1px solid var(--line); border-radius:999px; background:var(--card); color:var(--text); font-weight:600; cursor:pointer; }
 .kopf-ich:hover { border-color:var(--text2); }
 #profil-dialog { width:min(420px, calc(100vw - 24px)); }

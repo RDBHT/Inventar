@@ -16,6 +16,9 @@
   const deDatum = iso => iso ? iso.slice(8, 10) + '.' + iso.slice(5, 7) + '.' + iso.slice(0, 4) : '';
   const groesse = b => b > 1048576 ? (b / 1048576).toFixed(1).replace('.', ',') + ' MB' : Math.max(1, Math.round(b / 1024)) + ' KB';
   const oeffUrl = it => cfg.basisUrl + '/' + it.oeffPfad;
+  // Rechte des angemeldeten Zugangs — nur fuer die Anzeige; durchgesetzt wird auf dem Server.
+  const darf = recht => !!(cfg.benutzer && (cfg.benutzer.rechte || []).includes(recht));
+  const rollenName = r => (cfg.rollen && cfg.rollen[r]) || r;
   const dateiUrl = d => window.InventarDemo ? window.InventarDemo.dateiUrl(d) : 'api.php?a=datei&id=' + d.id;
 
   function melde(text) {
@@ -172,8 +175,21 @@
     $('#detail-titel').textContent = it ? it.name : 'Neues Item';
     $('#nach-anlage').hidden = !it;
     $('#vor-anlage').hidden = !!it;
-    $('#loeschen-btn').hidden = !it;
-    $('#kopie-btn').hidden = !it;
+    const kb = darf('bearbeiten'), kv = darf('verwalten');
+    $('#loeschen-btn').hidden = !it || !kv;
+    $('#kopie-btn').hidden = !it || !kb;
+    $('#speichern-btn').hidden = !kb;
+    $('#etikett-btn').hidden = !kb;
+    // Nur lesen: Felder sperren, Aenderungs-Knoepfe weg.
+    form().querySelectorAll('input, select, textarea').forEach(e => { e.disabled = !kb; });
+    form().querySelectorAll('.hochladen').forEach(e => { e.hidden = !kb; });
+    const herkunft = $('#herkunft');
+    herkunft.hidden = !(it && kv);
+    if (it && kv) {
+      const zeit = t => t ? deDatum(t.slice(0, 10)) + ', ' + t.slice(11, 16) : '';
+      herkunft.textContent = `Angelegt ${zeit(it.erstellt)} von ${it.erstelltVon || 'unbekannt'}`
+        + (it.geaendert && it.geaendert !== it.erstellt ? ` · zuletzt geändert ${zeit(it.geaendert)} von ${it.geaendertVon || 'unbekannt'}` : '');
+    }
     $('#form-fehler').textContent = '';
     if (!it) { $('#pruef-stand').textContent = ''; return; }
 
@@ -189,14 +205,14 @@
     // Nicht vorbelegen: Bei der Ersterfassung zaehlt das Datum auf der Plakette, nicht heute.
     if (!behalte) { $('#pruef-datum').value = ''; $('#pruef-notiz').value = ''; }
     $('#pruef-liste').innerHTML = it.pruefungen.map(p =>
-      `<li><span>${deDatum(p.datum)}${p.notiz ? ' · ' + esc(p.notiz) : ''}</span><button type="button" class="linkknopf" data-pruef-weg="${p.id}">entfernen</button></li>`).join('');
+      `<li><span>${deDatum(p.datum)}${p.notiz ? ' · ' + esc(p.notiz) : ''}</span>${kb ? `<button type="button" class="linkknopf" data-pruef-weg="${p.id}">entfernen</button>` : ''}</li>`).join('');
 
     $('#dok-liste').innerHTML = it.dokumente.map(d => `<li data-dok="${d.id}">
-        <input class="dok-bez" value="${esc(d.bezeichnung)}" aria-label="Bezeichnung" maxlength="200">
+        <input class="dok-bez" value="${esc(d.bezeichnung)}" aria-label="Bezeichnung" maxlength="200"${kb ? '' : ' disabled'}>
         <a href="${esc(dateiUrl(d))}" target="_blank" rel="noopener">öffnen</a>
-        <div class="dok-meta"><label class="haken"><input type="checkbox" class="dok-oeff" ${d.oeffentlich ? 'checked' : ''}> öffentlich</label>
+        <div class="dok-meta"><label class="haken"><input type="checkbox" class="dok-oeff" ${d.oeffentlich ? 'checked' : ''}${kb ? '' : ' disabled'}> öffentlich</label>
           <span>${esc(d.original)} · ${groesse(d.groesse)}</span>
-          <button type="button" class="linkknopf" data-dok-weg="${d.id}">löschen</button></div></li>`).join('')
+          ${kb ? `<button type="button" class="linkknopf" data-dok-weg="${d.id}">löschen</button>` : ''}</div></li>`).join('')
       || '<li class="leise ohne-rahmen">Noch keine Dokumente.</li>';
     if (!behalte) {
       $('#dok-bez').value = '';
@@ -344,6 +360,10 @@
     const ich = $('#ich');
     ich.textContent = cfg.benutzer ? (cfg.benutzer.name || cfg.benutzer.email) : '';
     ich.hidden = !cfg.benutzer;
+    $('#neu-btn').hidden = !darf('bearbeiten');
+    $('#etiketten-btn').hidden = !darf('bearbeiten');
+    $('#benutzer-btn').hidden = !darf('verwalten');
+    $('#sicherung-btn').hidden = !darf('verwalten');
     document.title = cfg.traeger;
     await laden();
   }
@@ -416,10 +436,17 @@
   // ---------- Zugaenge ----------
   async function renderBenutzer() {
     const { benutzer } = await api('benutzer');
+    const optionen = aktiv => Object.entries(cfg.rollen || {}).map(([k, t]) => `<option value="${esc(k)}"${k === aktiv ? ' selected' : ''}>${esc(t)}</option>`).join('');
     $('#bn-liste').innerHTML = benutzer.map(b => `<li><span>${esc(b.name || b.email)}
         <span class="leise">${esc(b.email)} · ${esc(b.status)}${b.zuletzt ? ' · zuletzt ' + deDatum(b.zuletzt.slice(0, 10)) : ''}${b.eingeladenVon ? ' · eingeladen von ' + esc(b.eingeladenVon) : ''}${b.codeFehler ? ' · ' + b.codeFehler + ' falsche Codes' : ''}</span></span>
-        ${b.ich ? '<span class="leise">du</span>' : `<span><button type="button" class="linkknopf" data-bn-neu="${esc(b.email)}">zurücksetzen</button>
+        ${b.ich ? `<span class="leise">${esc(rollenName(b.rolle))} · du</span>` : `<span class="bn-aktionen"><select data-bn-rolle="${b.id}" aria-label="Rolle von ${esc(b.email)}">${optionen(b.rolle)}</select>
+          <button type="button" class="linkknopf" data-bn-neu="${esc(b.email)}">zurücksetzen</button>
           <button type="button" class="linkknopf" data-bn-weg="${b.id}" data-bn-mail="${esc(b.email)}">entfernen</button></span>`}</li>`).join('');
+    $('#bn-rolle').innerHTML = optionen('bearbeiten');
+    // Nur ein Admin: Sperrt er sich aus, kann ihn niemand zuruecksetzen.
+    if (benutzer.filter(b => b.rolle === 'admin' && b.status === 'aktiv').length < 2) {
+      $('#bn-liste').insertAdjacentHTML('beforeend', '<li class="leise ohne-rahmen">Nur ein Admin — für den Notfall einen zweiten Admin benennen.</li>');
+    }
   }
 
   $('#benutzer-btn').addEventListener('click', async () => {
@@ -449,7 +476,15 @@
   function bestaetigung() {
     return { bestaetigungKennwort: $('#bn-bkw').value, bestaetigungCode: $('#bn-bcode').value };
   }
-  $('#einladen-form').addEventListener('submit', e => { e.preventDefault(); einladen({ email: $('#bn-email').value, name: $('#bn-name').value }); });
+  $('#einladen-form').addEventListener('submit', e => { e.preventDefault(); einladen({ email: $('#bn-email').value, name: $('#bn-name').value, rolle: $('#bn-rolle').value }); });
+  $('#bn-liste').addEventListener('change', async e => {
+    const id = e.target.dataset.bnRolle;
+    if (!id) return;
+    $('#bn-fehler').textContent = '';
+    try { await api('rolle', { id: Number(id), rolle: e.target.value, ...bestaetigung() }); melde('Rolle geändert'); }
+    catch (err) { $('#bn-fehler').textContent = err.message; }
+    finally { $('#bn-bcode').value = ''; await renderBenutzer().catch(() => {}); }
+  });
   $('#bn-kopieren').addEventListener('click', async () => {
     const t = $('#bn-link-text');
     try { await navigator.clipboard.writeText(t.value); } catch (e) { t.select(); document.execCommand('copy'); }
@@ -522,7 +557,7 @@
 
   $('#dok-liste').addEventListener('change', async e => {
     const li = e.target.closest('li[data-dok]');
-    if (!li) return;
+    if (!li || !darf('bearbeiten')) return;
     const bez = $('.dok-bez', li).value.trim();
     if (!bez) { $('#form-fehler').textContent = 'Bezeichnung darf nicht leer sein.'; return; }
     try {
@@ -586,6 +621,7 @@
     const b = cfg.benutzer || {};
     $('#pf-name').textContent = b.name || '—';
     $('#pf-email').textContent = b.email || '—';
+    $('#pf-rolle').textContent = b.rolle ? rollenName(b.rolle) : '—';
     $('#pf-bis').textContent = b.sitzungBis ? deDatum(b.sitzungBis) : '—';
     $('#profil-dialog').showModal();
   });

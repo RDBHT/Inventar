@@ -138,6 +138,7 @@
           <label>Öffentlicher Hinweis <textarea name="oeffHinweis" rows="2" maxlength="1000" placeholder="z. B. Bei Defekt bitte in der Geschäftsstelle melden."></textarea></label>
           <p class="leise">Standort, Notiz, Prüfungen und interne Dokumente bleiben intern.</p>
         </fieldset>
+        <p class="leise klein" id="herkunft" hidden></p>
       </div>
 
       <div class="spalte" id="nach-anlage">
@@ -199,6 +200,7 @@
     <dl class="profil">
       <dt>Name</dt><dd id="pf-name"></dd>
       <dt>E-Mail</dt><dd id="pf-email"></dd>
+      <dt>Rolle</dt><dd id="pf-rolle"></dd>
       <dt>Zwei-Faktor</dt><dd>eingerichtet</dd>
       <dt>Angemeldet bis</dt><dd id="pf-bis"></dd>
     </dl>
@@ -226,7 +228,7 @@
     <h2 id="bn-titel">Zugänge</h2>
     <ul id="bn-liste" class="bn-liste"></ul>
     <div class="block">
-      <p class="leise">Einladen, Zurücksetzen und Entfernen nur mit eigener Bestätigung:</p>
+      <p class="leise">Einladen, Rolle ändern, Zurücksetzen und Entfernen nur mit eigener Bestätigung:</p>
       <div class="zwei">
         <label>Eigenes Kennwort <input type="password" id="bn-bkw" autocomplete="current-password"></label>
         <label>Code aus der App <input type="text" id="bn-bcode" inputmode="numeric" maxlength="7" autocomplete="one-time-code"></label>
@@ -236,6 +238,8 @@
       <h3>Jemanden einladen</h3>
       <label>E-Mail-Adresse <input type="email" id="bn-email" required autocomplete="off"></label>
       <label>Name <input type="text" id="bn-name" maxlength="100" autocomplete="off"></label>
+      <label>Rolle <select id="bn-rolle"></select></label>
+      <p class="leise klein">Admin: alles, auch Zugänge · Bearbeiten: Gegenstände, Dokumente, Prüfungen, Etiketten · Ansehen: nur lesen</p>
       <button type="submit" class="btn primaer">Einladungslink erzeugen</button>
     </form>
     <div id="bn-link" class="block" hidden>

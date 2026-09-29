@@ -17,13 +17,21 @@
     catch (e) { fehler('Speicher des Browsers voll — Demo zurücksetzen oder Dateien löschen'); }
   }
 
+  // Beispielzugaenge der Demo — erfunden, keine echten Adressen.
+  const BEISPIEL_ZUGAENGE = () => [
+    { id: 1, name: 'Patrick', email: 'patrick@beispiel.de', rolle: 'admin', status: 'aktiv' },
+    { id: 2, name: 'Hausmeister', email: 'hausmeister@beispiel.de', rolle: 'bearbeiten', status: 'aktiv' },
+    { id: 3, name: 'Vorstand', email: 'vorstand@beispiel.de', rolle: 'ansehen', status: 'aktiv' },
+  ];
+
   async function laden() {
     if (zustand) return zustand;
     try { zustand = JSON.parse(localStorage.getItem(SCHLUESSEL) || 'null'); } catch (e) { zustand = null; }
+    if (zustand && !zustand.zugaenge) zustand.zugaenge = BEISPIEL_ZUGAENGE();
     if (!zustand) {
       const r = await fetch('daten.json', { cache: 'no-cache' });
       const d = await r.json();
-      zustand = { items: d.items, zaehler: Math.max(0, ...d.items.map(i => Number(i.id.slice(4)))), naechsteDok: 1000 };
+      zustand = { zugaenge: BEISPIEL_ZUGAENGE(), items: d.items, zaehler: Math.max(0, ...d.items.map(i => Number(i.id.slice(4)))), naechsteDok: 1000 };
       speichern();
     }
     return zustand;
@@ -52,6 +60,8 @@
       letztePruefung: letzte,
       naechstePruefung: it.kontrolle && it.intervallMonate > 0 && bas ? plusMonate(bas, it.intervallMonate) : '',
       oeffPfad: 'i/' + it.id + '-' + it.code,
+      erstelltVon: it.erstelltVon || 'Patrick',
+      geaendertVon: it.geaendertVon || 'Patrick',
     };
   }
 
@@ -71,9 +81,10 @@
       case 'status':
         return {
           eingerichtet: true, angemeldet: true,
-          benutzer: { name: 'Patrick', email: 'patrick@beispiel.de', sitzungBis: new Date(Date.now() + 30 * 864e5).toISOString().slice(0, 10) },
+          benutzer: { name: 'Patrick', email: 'patrick@beispiel.de', rolle: 'admin', rechte: ['lesen', 'bearbeiten', 'verwalten'], sitzungBis: new Date(Date.now() + 30 * 864e5).toISOString().slice(0, 10) },
+          rollen: { admin: 'Admin', bearbeiten: 'Bearbeiten', ansehen: 'Ansehen' },
           basisUrl: basis, traeger: 'WBG Inventar', maxUploadMb: 1, endungen: ['pdf', 'jpg', 'jpeg', 'png', 'webp', 'txt'], lokal: false,
-          version: '0.5.0', fusszeile: 'Demo · R.D. – WBG',
+          version: '0.6.0', fusszeile: 'Demo · R.D. – WBG',
         };
       case 'liste':
         return { items: zustand.items.map(aufbereiten) };
@@ -87,13 +98,13 @@
           intervallMonate: d.kontrolle ? Math.max(0, Math.min(600, Number(d.intervallMonate) || 0)) : 0,
           hwRef: String(d.hwRef || ''), notiz: String(d.notiz || '').slice(0, 4000), oeffName: String(d.oeffName || '').trim().slice(0, 200),
           oeffHinweis: String(d.oeffHinweis || '').slice(0, 1000), status: d.status === 'ausgesondert' ? 'ausgesondert' : 'aktiv',
-          geaendert: jetzt(), geaendertVon: 'Demo',
+          geaendert: jetzt(), geaendertVon: 'Patrick',
         };
         let it;
         if (d.id) { it = finde(d.id); Object.assign(it, werte); }
         else {
           zustand.zaehler += 1;
-          it = { id: 'INV-' + String(zustand.zaehler).padStart(4, '0'), code: code(), erstellt: jetzt(), dokumente: [], pruefungen: [], ...werte };
+          it = { id: 'INV-' + String(zustand.zaehler).padStart(4, '0'), code: code(), erstellt: jetzt(), erstelltVon: 'Patrick', dokumente: [], pruefungen: [], ...werte };
           zustand.items.push(it);
         }
         speichern();
@@ -150,7 +161,35 @@
         return antwortItem(it);
       }
       case 'benutzer':
-        return { benutzer: [{ id: 1, email: 'demo@beispiel.de', name: 'Demo', ich: true, status: 'aktiv', zuletzt: '', codeFehler: 0, eingeladenVon: '' }] };
+        return { benutzer: zustand.zugaenge.map(b => ({ zuletzt: '', codeFehler: 0, eingeladenVon: '', ...b, ich: b.id === 1 })) };
+      case 'einladen': {
+        const email = String(d.email || '').trim().toLowerCase();
+        if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) fehler('Ungültige E-Mail-Adresse');
+        let b = zustand.zugaenge.find(x => x.email === email);
+        if (b && b.id === 1) fehler('Den eigenen Zugang nicht zurücksetzen');
+        if (b && !d.zuruecksetzen) fehler('Diese Adresse hat bereits Zugang');
+        if (!b) {
+          if (!d.rolle) fehler('Rolle wählen');
+          b = { id: Math.max(...zustand.zugaenge.map(x => x.id)) + 1, email, name: String(d.name || '').trim(), rolle: d.rolle };
+          zustand.zugaenge.push(b);
+        }
+        b.status = 'eingeladen';
+        b.eingeladenVon = 'Patrick';
+        speichern();
+        return { link: 'In der Demo wird kein Einladungslink erzeugt.', lokal: '', gueltigBis: new Date(Date.now() + 7 * 864e5).toLocaleDateString('de-DE') };
+      }
+      case 'rolle': {
+        if (d.id === 1) fehler('Die eigene Rolle nicht ändern');
+        const b = zustand.zugaenge.find(x => x.id === d.id) || fehler('Zugang nicht gefunden');
+        b.rolle = d.rolle;
+        speichern();
+        return { ok: true };
+      }
+      case 'benutzer_entfernen':
+        if (d.id === 1) fehler('Den eigenen Zugang nicht entfernen');
+        zustand.zugaenge = zustand.zugaenge.filter(x => x.id !== d.id);
+        speichern();
+        return { ok: true };
       case 'abmelden':
         localStorage.removeItem(SCHLUESSEL);
         return { ok: true };
